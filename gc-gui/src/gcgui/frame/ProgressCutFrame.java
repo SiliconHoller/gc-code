@@ -1,0 +1,504 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/*
+ * STBKCutFrame.java
+ *
+ * Created on Nov 16, 2010, 1:21:07 PM
+ */
+
+package gcgui.frame;
+
+import edu.ohio.graphcuts.ImageGraph;
+import edu.ohio.graphcuts.alg.EdmondsKarp;
+import edu.ohio.graphcuts.alg.FordFulkerson;
+import edu.ohio.graphcuts.alg.bradbury.IllustratedBKTreeCut;
+import edu.ohio.graphcuts.alg.bradbury.IllustratedEdmondsKarp;
+import edu.ohio.graphcuts.alg.bradbury.IllustratedFordFulkerson;
+import edu.ohio.graphcuts.alg.bradbury.IllustratedGraphCut;
+import edu.ohio.graphcuts.alg.bradbury.IllustratedUFBorderCut;
+import edu.ohio.graphcuts.alg.bradbury.Illustrator;
+import edu.ohio.graphcuts.alg.bradbury.ImageConsumer;
+import edu.ohio.graphcuts.analysis.Cuts;
+import edu.ohio.graphcuts.analysis.IntensityKMeans;
+import edu.ohio.graphcuts.analysis.KMeans;
+import edu.ohio.graphcuts.analysis.RBFCapacityFill;
+import edu.ohio.graphcuts.analysis.Statistics;
+import edu.ohio.graphcuts.util.PngOps;
+import gcgui.img.CutImage;
+import gcgui.panel.ImagePanel;
+import gcgui.panel.ProgressPanel;
+import gcgui.panel.TitledImagePane;
+import gcgui.panel.TitledLayeredImagePane;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JFileChooser;
+
+/**
+ *
+ * @author david
+ */
+public class ProgressCutFrame extends javax.swing.JFrame implements ImageConsumer {
+
+    private String[] cuts = {"Ford-Fulkerson","Edmonds-Karp","BK Tree","Border"};
+    private IllustratedGraphCut gc;
+    private ImageGraph graph;
+
+    private ImagePanel originalPanel;
+    private ImagePanel kmeansOnePanel;
+    private ImagePanel kmeansZeroPanel;
+    private ImagePanel cutPanel;
+    private ImagePanel srcPanel;
+    private ImagePanel sinkPanel;
+    private ProgressPanel ppanel;
+    private TitledImagePane labelPane;
+    private TitledImagePane slinkPane;
+    private TitledImagePane tlinkPane;
+    private TitledImagePane cutPane;
+    private TitledLayeredImagePane pathPane;
+    private int src;
+    private int sink;
+
+    private File imgFile;
+    private BufferedImage oimg;
+    private BufferedImage kzeroimg;
+    private BufferedImage koneimg;
+    private BufferedImage simg;
+    private BufferedImage timg;
+    private BufferedImage cimg;
+
+    private JFileChooser jfc;
+
+    /** Creates new form STBKCutFrame */
+    public ProgressCutFrame() {
+        initComponents();
+        originalPanel = new ImagePanel();
+        kmeansZeroPanel = new ImagePanel();
+        kmeansOnePanel = new ImagePanel();
+        srcPanel = new ImagePanel();
+        sinkPanel = new ImagePanel();
+        cutPanel = new ImagePanel();
+
+        labelPane = new TitledImagePane("Labeling");
+        slinkPane = new TitledImagePane("S-Links");
+        tlinkPane = new TitledImagePane("T-Links");
+        cutPane = new TitledImagePane("Cuts");
+        pathPane = new TitledLayeredImagePane("Current Path");
+
+        originalPanel.setToolTipText("This is the original image scaled to fill the screen.");
+        kmeansZeroPanel.setToolTipText("This is the source labeling result for a simple K-Means classification.");
+        kmeansOnePanel.setToolTipText("This is the sink labeling result for a simple K-Means classification.");
+        srcPanel.setToolTipText("This is the graph cut labeling for the source.");
+        sinkPanel.setToolTipText("This is the graph cut labeling for the sink.");
+        cutPanel.setToolTipText("This shows the line of the cut.");
+        labelPane.setToolTipText("This shows the progressive labeling for algorithms that can provide it.");
+        slinkPane.setToolTipText("This shows the current existing t-links from the Source node.");
+        tlinkPane.setToolTipText("This shows the current existing t-links to the Sink node.");
+        cutPane.setToolTipText("This shows the current cut edges for algorithms that provide it.");
+        pathPane.setToolTipText("This shows the current path during the algorithm.");
+
+
+        tabPane.addTab("Original", originalPanel);
+        tabPane.addTab("K-Means 0", kmeansZeroPanel);
+        tabPane.addTab("K-Means 1", kmeansOnePanel);
+        tabPane.addTab("Source Labelling", srcPanel);
+        tabPane.addTab("Sink Labelling",sinkPanel);
+        tabPane.addTab("Image Cut", cutPanel);
+        tabPane.addTab("Labeling", labelPane);
+        tabPane.addTab("S T-Links", slinkPane);
+        tabPane.addTab("T T-Links", tlinkPane);
+        tabPane.addTab("Cuts", cutPane);
+        tabPane.addTab("Current Path", pathPane);
+    }
+
+    protected void setStatus(String msg) {
+        status.setText(msg);
+    }
+
+    /** This method is called from within the constructor to
+     * initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is
+     * always regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        controlPanel = new javax.swing.JPanel();
+        buttonPanel = new javax.swing.JPanel();
+        selButton = new javax.swing.JButton();
+        analyzeButton = new javax.swing.JButton();
+        cutComboBox = new javax.swing.JComboBox();
+        cutButton = new javax.swing.JButton();
+        saveButton = new javax.swing.JButton();
+        fillPanel = new javax.swing.JPanel();
+        tabPane = new javax.swing.JTabbedPane();
+        status = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setTitle("Animated Graph-Cut Progress");
+
+        controlPanel.setLayout(new java.awt.BorderLayout());
+
+        buttonPanel.setLayout(new java.awt.GridLayout(0, 1));
+
+        selButton.setText("1. Select Image...");
+        selButton.setHorizontalAlignment(javax.swing.SwingConstants.LEADING);
+        selButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                selButtonActionPerformed(evt);
+            }
+        });
+        buttonPanel.add(selButton);
+
+        analyzeButton.setText("2. Auto-Analyze");
+        analyzeButton.setHorizontalAlignment(javax.swing.SwingConstants.LEADING);
+        analyzeButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                analyzeButtonActionPerformed(evt);
+            }
+        });
+        buttonPanel.add(analyzeButton);
+
+        cutComboBox.setModel(new DefaultComboBoxModel(cuts));
+        cutComboBox.setToolTipText("Select the GraphCut algorithm.");
+        buttonPanel.add(cutComboBox);
+
+        cutButton.setText("3. Perform Cut");
+        cutButton.setHorizontalAlignment(javax.swing.SwingConstants.LEADING);
+        cutButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cutButtonActionPerformed(evt);
+            }
+        });
+        buttonPanel.add(cutButton);
+
+        saveButton.setText("Save Results...");
+        saveButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                saveButtonActionPerformed(evt);
+            }
+        });
+        buttonPanel.add(saveButton);
+
+        controlPanel.add(buttonPanel, java.awt.BorderLayout.PAGE_START);
+
+        javax.swing.GroupLayout fillPanelLayout = new javax.swing.GroupLayout(fillPanel);
+        fillPanel.setLayout(fillPanelLayout);
+        fillPanelLayout.setHorizontalGroup(
+            fillPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 169, Short.MAX_VALUE)
+        );
+        fillPanelLayout.setVerticalGroup(
+            fillPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 171, Short.MAX_VALUE)
+        );
+
+        controlPanel.add(fillPanel, java.awt.BorderLayout.PAGE_END);
+
+        getContentPane().add(controlPanel, java.awt.BorderLayout.WEST);
+
+        tabPane.setPreferredSize(new java.awt.Dimension(500, 500));
+        getContentPane().add(tabPane, java.awt.BorderLayout.CENTER);
+
+        status.setText("Status Messages...");
+        status.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.LOWERED));
+        getContentPane().add(status, java.awt.BorderLayout.SOUTH);
+
+        pack();
+    }// </editor-fold>//GEN-END:initComponents
+
+    private void analyzeButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_analyzeButtonActionPerformed
+
+
+        Thread t = new Thread(new AnalysisRunner());
+        t.start();
+
+    }//GEN-LAST:event_analyzeButtonActionPerformed
+
+    private void selButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selButtonActionPerformed
+        if (jfc == null) {
+            jfc = new JFileChooser();
+        }
+        jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        int val = jfc.showDialog(this, "Open Image");
+        if (val == JFileChooser.APPROVE_OPTION) {
+            imgFile = jfc.getSelectedFile();
+            try {
+                oimg = ImageIO.read(imgFile);
+                originalPanel.setImage(oimg);
+                pathPane.setBackgroundImage(oimg);
+                kzeroimg = null;
+                koneimg = null;
+                simg = null;
+                timg = null;
+                cimg = null;
+
+                kmeansZeroPanel.setImage(kzeroimg);
+                kmeansOnePanel.setImage(koneimg);
+                srcPanel.setImage(simg);
+                sinkPanel.setImage(timg);
+                cutPanel.setImage(cimg);
+                labelPane.setImageCaption(null, "");
+                slinkPane.setImageCaption(null, "");
+                tlinkPane.setImageCaption(null, "");
+                cutPane.setImageCaption(null, "");
+                
+                setStatus("Image loaded.");
+            } catch (Exception e) {
+                e.printStackTrace();
+                status.setText("Error loading image...");
+            }
+        } else {
+            setStatus("Selection cancelled.");
+        }
+    }//GEN-LAST:event_selButtonActionPerformed
+
+    private void cutButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cutButtonActionPerformed
+        setGraphCut();
+        if (gc != null) {
+            if (ppanel != null) {
+                tabPane.remove(ppanel);
+            }
+            src = graph.getSrc();
+            sink = graph.getSink();
+            ppanel = new ProgressPanel(graph.getSrc(), graph.getSink(), oimg);
+            tabPane.addTab("Progression", ppanel);
+            tabPane.setSelectedComponent(ppanel);
+            Illustrator ill = gc.getIllustrator();
+            ill.addImageConsumer(ppanel);
+            ill.addImageConsumer(this);
+            Thread t = new Thread(new CutRunner());
+            t.start();
+        } else {
+            setStatus("Select a GC algorithm from the drop-down box.");
+        }
+
+
+    }//GEN-LAST:event_cutButtonActionPerformed
+
+    private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
+        if (jfc == null) {
+            jfc = new JFileChooser();
+        }
+        jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int val = jfc.showDialog(this,"Select Directory");
+        if (val == JFileChooser.APPROVE_OPTION) {
+            String sdir = jfc.getSelectedFile().getAbsolutePath();
+            String base = imgFile.getName();
+            CutImage ci = new CutImage(base, CutImage.BUFFERED_IMAGE);
+            CutImage sci = ci.getSrcName();
+            CutImage tci = ci.getSinkName();
+            CutImage cci = ci.getCutName();
+            CutImage kzi = ci.getKName(0);
+            CutImage koi = ci.getKName(1);
+            try {
+                setStatus("Writing original image...");
+                ImageIO.write(oimg, "png", new File(sdir+File.separator+ci.getBaseFile()+".png"));
+                setStatus("Writing k-means zero label image...");
+                ImageIO.write(kzeroimg,"png",new File(sdir+File.separator+kzi.getBaseFile()+".png"));
+                setStatus("Writing k-means one label image...");
+                ImageIO.write(koneimg,"png", new File(sdir+File.separator+koi.getBaseFile()+".png"));
+                setStatus("Writing source label image...");
+                ImageIO.write(simg,"png",new File(sdir+File.separator+sci.getBaseFile()+".png"));
+                setStatus("Writing sink label image...");
+                ImageIO.write(timg,"png",new File(sdir+File.separator+tci.getBaseFile()+".png"));
+                setStatus("Writing cut edge image...");
+                ImageIO.write(cimg,"png",new File(sdir+File.separator+cci.getBaseFile()+".png"));
+                ImageIO.write(labelPane.getImage(),"png",new File(sdir+File.separator+sci.getBaseFile()+"-labels.png"));
+                setStatus("Finished!");
+            } catch (IOException e) {
+                e.printStackTrace();
+                setStatus("Problem storing images...");
+            }
+        }
+
+    }//GEN-LAST:event_saveButtonActionPerformed
+
+    protected void setGraphCut() {
+        int index = cutComboBox.getSelectedIndex();
+        switch(index) {
+            case -1:
+                gc = null;
+                break;
+
+            case 0:
+                gc = new IllustratedFordFulkerson(graph);
+                break;
+
+            case 1:
+                gc = new IllustratedEdmondsKarp(graph);
+                break;
+
+            case 2:
+                gc = new IllustratedBKTreeCut(graph);
+                break;
+
+            case 3:
+                gc = new IllustratedUFBorderCut(graph);
+                break;
+
+            default:
+                gc = null;
+                break;
+        }
+    }
+    protected void setImages() {
+
+        
+        PngOps pngops = new PngOps();
+        int w = graph.getWidth();
+        int h = graph.getHeight();
+
+        if (!(gc instanceof FordFulkerson) && !(gc instanceof EdmondsKarp)) {
+            Cuts ccuts = new Cuts(graph,gc);
+            cimg = pngops.cutImage(w, h, ccuts.getCuts());
+            cutPanel.setImage(cimg);
+        }
+        
+        simg = pngops.srcImage(w, h, gc, graph);
+        timg = pngops.sinkImage(w, h, gc, graph);
+
+        
+        kmeansZeroPanel.setImage(kzeroimg);
+        kmeansOnePanel.setImage(koneimg);
+        srcPanel.setImage(simg);
+        sinkPanel.setImage(timg);
+        
+    }
+
+    protected BufferedImage getImageFor(KMeans kmeans, int clazz, ImageGraph graph) {
+        PngOps ops = new PngOps();
+        BufferedImage img = ops.blankImage(graph.getWidth(), graph.getHeight());
+        int[] verts = graph.getVertices();
+        int[] clazzes = kmeans.getClassifications();
+        for (int i=0;i<clazzes.length;i++) {
+            if (clazzes[i] == clazz) {
+                img.setRGB(graph.getX(i), graph.getY(i), ops.makeGrayPixel(verts[i]));
+            }
+        }
+        return img;
+    }
+
+    public void pathImage(String title, BufferedImage img) {
+        pathPane.setForegroundImageTitle(img, title);
+    }
+
+    public void labelImage(String title, BufferedImage img) {
+        labelPane.setImageCaption(img, title);
+    }
+
+    public void tlinkImage(String title, BufferedImage img, int label) {
+        if (label == src) {
+            slinkPane.setImageCaption(img, title);
+        } else if (label == sink) {
+            tlinkPane.setImageCaption(img, title);
+        }
+        
+    }
+
+    public void cutImage(String title, BufferedImage img) {
+        cutPane.setImageCaption(img, title);
+    }
+
+    public void pathImage(int iteration, BufferedImage img) {
+        //not implemented
+    }
+
+    public void labelImage(int iteration, BufferedImage img) {
+        //not implemented
+    }
+
+    public void tlinkImage(int iteration, BufferedImage img, int label) {
+        //not implemented
+    }
+
+    public void cutImage(int iteration, BufferedImage img) {
+        //not implemented
+    }
+
+    private class AnalysisRunner implements Runnable {
+
+        public void run() {
+            disableButtons();
+            setStatus("Beginning Analysis...");
+            PngOps ops = new PngOps();
+            setStatus("Creating graph from image...");
+            graph = ops.get4NGraph(oimg);
+            setStatus("Performing K-Means analysis...");
+            KMeans km = new IntensityKMeans(graph);
+            if (km.analyze()) {
+                setStatus("Analysis complete...");
+            } else {
+                setStatus("Analysis did not converge...halting.");
+                return;
+            }
+            Statistics stats = new Statistics(km);
+            setStatus("Filling edge capacities...");
+            RBFCapacityFill rbf = new RBFCapacityFill(graph,km,stats);
+            rbf.fillCapacities();
+            setStatus("Creating K-Means image for label 0...");
+            kzeroimg = getImageFor(km,0,graph);
+
+            setStatus("Creating K-Means image for label 1...");
+            koneimg = getImageFor(km,1,graph);
+
+            kmeansZeroPanel.setImage(kzeroimg);
+            kmeansOnePanel.setImage(koneimg);
+
+            setStatus("Graph initalized.  Ready to perform cut.");
+            enableButtons();
+        }
+
+    }
+
+    private class CutRunner implements Runnable {
+
+        public void run() {
+            disableButtons();
+            setStatus("Performing Graph Cut...");
+            double flow = gc.maxFlow();
+            setStatus("Complete.  Max flow is "+Double.toString(flow));
+            setImages();
+            enableButtons();
+        }
+
+    }
+
+    private void disableButtons() {
+        selButton.setEnabled(false);
+        analyzeButton.setEnabled(false);
+        cutComboBox.setEnabled(false);
+        cutButton.setEnabled(false);
+        saveButton.setEnabled(false);
+    }
+
+    private void enableButtons() {
+        selButton.setEnabled(true);
+        analyzeButton.setEnabled(true);
+        cutComboBox.setEnabled(true);
+        cutButton.setEnabled(true);
+        saveButton.setEnabled(true);
+    }
+
+
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton analyzeButton;
+    private javax.swing.JPanel buttonPanel;
+    private javax.swing.JPanel controlPanel;
+    private javax.swing.JButton cutButton;
+    private javax.swing.JComboBox cutComboBox;
+    private javax.swing.JPanel fillPanel;
+    private javax.swing.JButton saveButton;
+    private javax.swing.JButton selButton;
+    private javax.swing.JLabel status;
+    private javax.swing.JTabbedPane tabPane;
+    // End of variables declaration//GEN-END:variables
+
+}

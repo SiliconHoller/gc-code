@@ -1,0 +1,9 @@
+Building Trees (CPU)	1810000000
+Adopt (User)	210000000
+Graph vertices	4098
+Augment (CPU)	1860000000
+Building Trees (User)	400000000
+Running time (User)	2500000000
+Running time (CPU)	6820000000
+Augment (User)	540000000
+Adopt (CPU)	1610000000

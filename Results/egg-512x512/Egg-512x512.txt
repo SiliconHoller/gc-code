@@ -1,0 +1,6 @@
+Object Mean: 256
+Object Sd: 50
+Background Mean: 0
+Background Sd: 50
+
+no ReRun

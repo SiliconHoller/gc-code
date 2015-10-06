@@ -1,0 +1,9 @@
+Find Cuts (CPU)	250000000
+Building Trees (CPU)	32360000000
+Graph vertices	4098
+Augment (CPU)	610000000
+Find Cuts (User)	210000000
+Building Trees (User)	32310000000
+Running time (User)	33120000000
+Running time (CPU)	33220000000
+Augment (User)	580000000

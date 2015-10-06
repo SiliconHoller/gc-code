@@ -1,0 +1,12 @@
+
+
+
+typedef struct {
+
+	int *u; //start of this directed edge
+	int *v; //end of this directed edge
+	double cap; //capacity of this edge
+
+} EDGE;
+
+

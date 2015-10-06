@@ -1,0 +1,10 @@
+Object Mean: 120
+Object Sd: 30
+Background Mean: 0
+Background Sd: 30
+
+5 ReRuns
+Object Mean: 120
+Object Sd: 15
+Background Mean: 60
+Background Sd: 15
